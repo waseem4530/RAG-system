@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --dark-bg: #1a1a1a;
+            --dark-text: #ffffff;
+            --light-bg: #ffffff;
+            --light-text: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .dark-mode {
+            background-color: var(--dark-bg);
+            color: var(--dark-text);
+        }
+
+        .chat-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 1rem;
+            background-color: var(--light-bg);
+        }
+
+        .dark-mode .chat-messages {
+            background-color: var(--dark-bg);
+        }
+
+        .message {
+            margin: 0.5rem 0;
+            padding: 0.8rem 1.2rem;
+            border-radius: 15px;
+            max-width: 80%;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .user-message {
+            background-color: var(--primary-color);
+            color: white;
+            margin-left: auto;
+        }
+
+        .bot-message {
+            background-color: #f0f0f0;
+            color: var(--light-text);
+        }
+
+        .dark-mode .bot-message {
+            background-color: #2d2d2d;
+            color: var(--dark-text);
+        }
+
+        .message-timestamp {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 0.2rem;
+        }
+
+        .input-group {
+            padding: 1rem;
+            background-color: var(--light-bg);
+        }
+
+        .dark-mode .input-group {
+            background-color: var(--dark-bg);
+        }
+
+        .form-control {
+            border-radius: 20px;
+            padding: 0.8rem 1.2rem;
+            border: 2px solid #e0e0e0;
+        }
+
+        .dark-mode .form-control {
+            background-color: #2d2d2d;
+            border-color: #3d3d3d;
+            color: var(--dark-text);
+        }
+
+        .btn-send {
+            border-radius: 20px;
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            transition: transform 0.2s;
+        }
+
+        .btn-send:hover {
+            transform: scale(1.05);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(180deg);
+        }
+
+        .clear-history {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .clear-history:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 5px;
+            padding: 0.8rem 1.2rem;
+            background-color: #f0f0f0;
+            border-radius: 15px;
+            width: fit-content;
+        }
+
+        .dark-mode .typing-indicator {
+            background-color: #2d2d2d;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            animation: typing 1s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <div class="container">
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2>AI Assistant</h2>
+                <button class="clear-history" onclick="clearHistory()">
+                    <i class="fas fa-trash"></i> Clear History
+                </button>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot-message">
+                    Hello! How can I help you today?
+                </div>
+            </div>
+            <div class="input-group">
+                <input type="text" class="form-control" id="user-input" placeholder="Type your message...">
+                <button class="btn btn-send" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isDarkMode = false;
+        let chatHistory = [];
+
+        // Load chat history from session
+        async function loadChatHistory() {
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: '' }),
+                });
+                const data = await response.json();
+                if (data.history) {
+                    chatHistory = data.history;
+                    displayChatHistory();
+                }
+            } catch (error) {
+                console.error('Error loading chat history:', error);
+            }
+        }
+
+        // Display chat history
+        function displayChatHistory() {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '';
+            
+            chatHistory.forEach(msg => {
+                addMessage(msg.user, true, msg.timestamp);
+                addMessage(msg.bot, false, msg.timestamp);
+            });
+        }
+
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode');
+            const icon = document.querySelector('.theme-toggle i');
+            icon.classList.toggle('fa-moon');
+            icon.classList.toggle('fa-sun');
+        }
+
+        function addMessage(message, isUser, timestamp = null) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            const messageContent = document.createElement('div');
+            messageContent.textContent = message;
+            messageDiv.appendChild(messageContent);
+            
+            if (timestamp) {
+                const timestampDiv = document.createElement('div');
+                timestampDiv.className = 'message-timestamp';
+                timestampDiv.textContent = timestamp;
+                messageDiv.appendChild(timestampDiv);
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const chatMessages = document.getElementById('chat-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return typingDiv;
+        }
+
+        function removeTypingIndicator(indicator) {
+            indicator.remove();
+        }
+
+        async function clearHistory() {
+            try {
+                const response = await fetch('/clear_history', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                if (response.ok) {
+                    chatHistory = [];
+                    const chatMessages = document.getElementById('chat-messages');
+                    chatMessages.innerHTML = '<div class="message bot-message">Hello! How can I help you today?</div>';
+                }
+            } catch (error) {
+                console.error('Error clearing history:', error);
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            
+            if (message) {
+                addMessage(message, true);
+                input.value = '';
+                
+                const typingIndicator = showTypingIndicator();
+                
+                try {
+                    const response = await fetch('/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ message }),
+                    });
+                    
+                    const data = await response.json();
+                    removeTypingIndicator(typingIndicator);
+                    
+                    if (data.history) {
+                        chatHistory = data.history;
+                    }
+                    
+                    addMessage(data.response, false);
+                } catch (error) {
+                    removeTypingIndicator(typingIndicator);
+                    addMessage('Sorry, there was an error processing your request.', false);
+                }
+            }
+        }
+
+        document.getElementById('user-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Load chat history when page loads
+        loadChatHistory();
+    </script>
+</body>
+</html> 
